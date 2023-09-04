@@ -11,7 +11,12 @@
 
     <link rel="canonical" href="https://getbootstrap.com/docs/5.3/examples/sidebars/">
 
-    
+    <!-- Include FilePond and its plugins from CDNs -->
+<link href="https://unpkg.com/filepond/dist/filepond.css" rel="stylesheet">
+<script src="https://unpkg.com/filepond/dist/filepond.js"></script>
+<script src="https://unpkg.com/filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type.js"></script>
+<script src="https://unpkg.com/filepond-plugin-file-validate-size/dist/filepond-plugin-file-validate-size.js"></script>
+
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
 
@@ -152,16 +157,22 @@
           <h1 class="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+        <form action="/upload" method="POST" enctype="multipart/form-data" >
         <div class="modal-body">
+
+         
           <div class="input-group mb-3">
-            <label class="input-group-text" for="inputGroupFile01">Upload</label>
-            <input type="file" class="form-control" id="inputGroupFile01">
+              <label class="input-group-text" for="inputGroupFile01" >Upload</label>
+              <input type="file" name="file">
           </div>
+      
+
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary">Upload</button>
+          <button type="submit" class="btn btn-primary" onclick="alert('added')" >Upload</button>
         </div>
+      </form>
       </div>
     </div>
   </div>
@@ -279,7 +290,7 @@
   <br>
 
   
-  <table class="table table-dark table-hover">
+  <table class="table table-dark table-hover"  >
     <thead>
       <tr>
     
@@ -288,7 +299,7 @@
         <th scope="col">Size</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody id="fileListTable" >
       <tr>
         <td><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-image" viewBox="0 0 16 16">
           <path d="M6.502 7a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>
@@ -309,4 +320,64 @@
 <script src="../assets/dist/js/bootstrap.bundle.min.js"></script>
 
     <script src="sidebars.js"></script></body>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const inputElement = document.querySelector('.filepond');
+        FilePond.registerPlugin(
+          FilePondPluginFileValidateType,
+          FilePondPluginFileValidateSize
+        );
+    
+        FilePond.create(inputElement, {
+          allowMultiple: true,  // Allow multiple file/folder uploads
+          server: '/upload',    // Specify the server endpoint
+          fileValidateTypeDetectType: (source) =>
+            new Promise((resolve, reject) => {
+              // Use application/zip for folder uploads
+              if (source instanceof File) {
+                resolve(source.type);
+              } else {
+                resolve('application/zip'); // Assuming folders are zipped
+              }
+            }),
+        });
+      });
+    </script>
+    
+
+    <script>
+      // Function to fetch and display the contents of the 'uploads' folder.
+      function fetchUploads() {
+        fetch('/listuploads')
+          .then((response) => response.json())
+          .then((data) => {
+            const fileListTable = document.getElementById('fileListTable');
+            fileListTable.innerHTML = ''; // Clear existing table
+    
+            data.files.forEach((file) => {
+              const row = document.createElement('tr');
+              const nameCell = document.createElement('td');
+              nameCell.textContent = file.name;
+              const typeCell = document.createElement('td');
+              typeCell.textContent = file.type;
+              const sizeCell = document.createElement('td');
+              sizeCell.textContent = file.size;
+
+              const down = document.createElement('a')
+              down.src 
+    
+              row.appendChild(nameCell);
+              row.appendChild(typeCell);
+              row.appendChild(sizeCell);
+              fileListTable.appendChild(row);
+            });
+          })
+          .catch((error) => console.error('Error fetching uploads:', error));
+      }
+    
+      // Initial fetch when the page loads.
+      fetchUploads();
+    </script>
+    
 </html>
